@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patience Test</title>
+
+<style>
+body{
+  margin:0;
+  height:100vh;
+  background:#f5f5f5;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family: "Helvetica Neue", sans-serif;
+  color:#222;
+}
+#box{
+  width:90%;
+  max-width:420px;
+  background:white;
+  padding:30px;
+  text-align:center;
+  border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.1);
+  animation:breath 6s infinite ease-in-out;
+}
+@keyframes breath{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.02)}
+}
+h1{margin-bottom:5px;}
+#score{
+  font-size:36px;
+  margin:15px 0;
+}
+#msg{
+  min-height:40px;
+  opacity:0.7;
+}
+#leader{
+  margin-top:20px;
+  font-size:14px;
+  opacity:0.6;
+}
+.fail{
+  animation:shake .2s;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-4px)}
+  100%{transform:translateX(0)}
+}
+</style>
+</head>
+
+<body>
+<div id="box">
+  <h1>🧘 Patience Test</h1>
+  <div id="score">0.0</div>
+  <div id="msg">Do nothing.</div>
+  <div id="leader"></div>
+</div>
+
+<script>
+let score = 0;
+let best = Number(localStorage.getItem("patienceBest") || 0);
+let alive = true;
+
+const scoreDiv = document.getElementById("score");
+const msgDiv = document.getElementById("msg");
+const leaderDiv = document.getElementById("leader");
+const box = document.getElementById("box");
+
+const traps = [
+  "Tap to continue",
+  "You are about to win",
+  "Screen frozen?",
+  "Claim reward now",
+  "Timer stopped",
+  "Touch to stabilize"
+];
+
+function rank(s){
+  if(s<10) return "Impulsive";
+  if(s<30) return "Calm";
+  if(s<60) return "Focused";
+  if(s<120) return "Monk";
+  return "Zen Master 🧘";
+}
+
+function updateLeader(){
+  leaderDiv.innerHTML = `
+    Best: ${best.toFixed(1)}s<br>
+    Rank: ${rank(best)}
+  `;
+}
+updateLeader();
+
+function loop(){
+  if(!alive) return;
+  score += 0.1;
+  scoreDiv.textContent = score.toFixed(1);
+}
+setInterval(loop,100);
+
+setInterval(()=>{
+  if(!alive) return;
+  msgDiv.textContent = traps[Math.floor(Math.random()*traps.length)];
+},3000);
+
+function fail(){
+  if(!alive) return;
+  alive = false;
+  box.classList.add("fail");
+  msgDiv.textContent = "❌ You failed by acting.";
+  best = Math.max(best,score);
+  localStorage.setItem("patienceBest",best);
+  updateLeader();
+  setTimeout(()=>location.reload(),2000);
+}
+
+/* ANY interaction = fail */
+["click","keydown","touchstart","wheel"].forEach(e=>{
+  document.addEventListener(e,fail,{once:true});
+});
+</script>
+</body>
+</html>
