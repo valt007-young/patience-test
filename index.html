@@ -3,134 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STAY STILL</title>
+<title>CONTROL TEST</title>
 <style>
 html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  font-family:system-ui, sans-serif;
-  background:#f6f6f6;
+  margin:0;height:100%;
+  font-family:system-ui,sans-serif;
+  background:#f2f2f2;
   color:#222;
 }
-#wrap{
+#app{
   height:100%;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   text-align:center;
-  padding:20px;
 }
-h1{
-  font-weight:500;
-  letter-spacing:2px;
+h1{letter-spacing:3px;font-weight:500;}
+#status{margin:20px;height:40px;}
+#bar{
+  width:260px;height:10px;
+  background:#ddd;
+  border-radius:10px;
+  overflow:hidden;
 }
-#msg{
-  margin:20px 0;
-  font-size:1rem;
-  min-height:40px;
-}
-#circle{
-  width:140px;
-  height:140px;
-  border-radius:50%;
-  border:3px solid #ccc;
-  margin:30px 0;
-  transition:all .4s;
-}
-button{
-  padding:14px 40px;
-  font-size:1rem;
-  background:white;
-  border:2px solid #222;
-  border-radius:30px;
-}
-button:active{
+#fill{
+  width:0%;height:100%;
   background:#222;
-  color:white;
+  transition:width .3s;
 }
-.hidden{display:none}
-.shake{
-  animation:shake .25s;
+#btn{
+  margin-top:30px;
+  padding:14px 50px;
+  border-radius:30px;
+  border:2px solid #222;
+  background:#fff;
+  font-size:1rem;
 }
+#btn:active{background:#222;color:#fff}
+.shake{animation:shake .3s}
 @keyframes shake{
   0%{transform:translateX(0)}
-  25%{transform:translateX(-3px)}
-  50%{transform:translateX(3px)}
-  75%{transform:translateX(-3px)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-4px)}
   100%{transform:translateX(0)}
 }
+.hidden{display:none}
 </style>
 </head>
 <body>
 
-<div id="wrap">
-  <h1>STAY STILL</h1>
-  <div id="msg">Observe.</div>
-  <div id="circle"></div>
+<div id="app">
+  <h1>CONTROL TEST</h1>
+  <div id="status">Initializing…</div>
+  <div id="bar"><div id="fill"></div></div>
   <button id="btn">Tap</button>
 </div>
 
 <script>
-const msg=document.getElementById("msg");
+const status=document.getElementById("status");
+const fill=document.getElementById("fill");
 const btn=document.getElementById("btn");
-const circle=document.getElementById("circle");
 
-let alive=true;
 let start=Date.now();
-let taps=0;
-let dangerWindow=false;
-let silenceTimer;
+let alive=true;
+let progress=0;
+let touchSafe=true;
+let inactivityKills=false;
+let lastAction=Date.now();
 
-function fail(reason){
-  if(!alive) return;
+const switchTouch=8000+Math.random()*6000;
+const switchInactivity=16000+Math.random()*8000;
+
+function fail(msg){
+  if(!alive)return;
   alive=false;
   document.body.classList.add("shake");
   setTimeout(()=>{
-    const score=((Date.now()-start)/1000).toFixed(2);
-    msg.innerText="Failed.\nTime: "+score+"s";
-    btn.innerText="Restart";
-  },400);
+    status.innerText="Failed.\nTime: "+((Date.now()-start)/1000).toFixed(2)+"s";
+    btn.innerText="Retry";
+  },500);
 }
 
-function randomPhase(){
-  if(!alive) return;
-  dangerWindow=Math.random()>0.7;
-  circle.style.borderColor=dangerWindow?"#aaa":"#ddd";
+setInterval(()=>{
+  if(!alive)return;
 
-  const texts=[
-    "Wait.",
-    "Stillness matters.",
-    "Now is not the moment.",
-    "Observe the circle.",
-    "Breathe.",
-    "Do nothing."
-  ];
-  msg.innerText=texts[Math.floor(Math.random()*texts.length)];
+  const now=Date.now();
+  progress=Math.min(100,progress+0.3+Math.random()*0.2);
+  fill.style.width=progress+"%";
 
-  silenceTimer=setTimeout(()=>{
-    if(Math.random()>0.9) fail("Inaction bias");
-  },4000+Math.random()*4000);
-}
+  if(now-start>switchTouch) touchSafe=false;
+  if(now-start>switchInactivity) inactivityKills=true;
+
+  if(inactivityKills && now-lastAction>5000 && Math.random()>0.6){
+    setTimeout(()=>fail("Inaction"),1200+Math.random()*2000);
+  }
+
+  if(progress>85 && Math.random()>0.7){
+    status.innerText="Confirm to proceed";
+  } else {
+    const msgs=[
+      "Hold.",
+      "Maintain control.",
+      "Do not rush.",
+      "Observe.",
+      "Stability fluctuating."
+    ];
+    status.innerText=msgs[Math.floor(Math.random()*msgs.length)];
+  }
+
+},700);
 
 btn.onclick=()=>{
-  if(!alive){
-    location.reload();
-    return;
+  if(!alive){location.reload();return;}
+  lastAction=Date.now();
+
+  if(!touchSafe && Math.random()>0.3){
+    setTimeout(()=>fail("Impulse"),800+Math.random()*2000);
   }
-  taps++;
-  clearTimeout(silenceTimer);
 
-  if(dangerWindow) fail("Impulse detected");
-  if(taps>2 && Math.random()>0.6) fail("Overcontrol");
-
-  circle.style.borderColor="#222";
-  msg.innerText="Not yet.";
+  if(progress>90 && Math.random()>0.5){
+    setTimeout(()=>fail("Confirmation error"),1000);
+  }
 };
-
-setInterval(randomPhase,5000);
-randomPhase();
 </script>
 
 </body>
